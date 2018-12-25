@@ -132,4 +132,27 @@ function Get-CsResponseGroupService {
         }
     }
 }
+function Get-CsProxyAddress {
+    Param (
+        [Parameter(
+            Position = 0, Mandatory, HelpMessage = "Users SAMAccountName.")]
+        [string]$SAMAccount
+        )
+        $user = Get-AdUser $SAMAccount -properties ProxyAddresses | Select-Object -ExpandProperty ProxyAddresses
+        foreach ($proxy in $user) {
+            if ($proxy -like "sip:") {
+                $sip = $proxy
+            }
+            if ($proxy -like "SMTP:*") {
+                $smtp = $proxy
+            }
+        }
+        Write-Output "SIP: $sip"
+        Write-Output "SMTP: $smtp"
+        if ($sip.substring(4) -match $smtp.substring(5)) {
+            Write-Output "SIP & SMTP matches!"
+        } else {
+            Write-Error "SIP & SMTP does not match!"
+        }
+}
 Export-ModuleMember -Function Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService -Alias gpool, rpool, grgs -Cmdlet Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService
