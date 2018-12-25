@@ -133,6 +133,16 @@ function Get-CsResponseGroupService {
     }
 }
 function Get-CsProxyAddress {
+    <#
+    .SYNOPSIS
+    Checks a user for matching SIP and primary SMTP address.
+    .DESCRIPTION
+    Checks a user for matching SIP and primary SMTP address.
+    .PARAMETER SAMAccount
+    Required, defines the user to check. This gather all the proxyaddresses that has been defined in Active Directory, then find the SIP and primary SMTP to match later.
+    .EXAMPLE
+    Get-CsProxyAddress SAMAccountName
+    #>
     Param (
         [Parameter(
             Position = 0, Mandatory, HelpMessage = "Users SAMAccountName.")]
@@ -155,4 +165,4 @@ function Get-CsProxyAddress {
             Write-Error "SIP & SMTP does not match!"
         }
 }
-Export-ModuleMember -Function Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService -Alias gpool, rpool, grgs -Cmdlet Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService
+Export-ModuleMember -Function Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService, Get-CsProxyAddress -Alias gpool, rpool, grgs, gprox -Cmdlet Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService
