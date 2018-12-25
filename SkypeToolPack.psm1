@@ -140,16 +140,16 @@ function Get-CsProxyAddress {
         )
         $user = Get-AdUser $SAMAccount -properties ProxyAddresses | Select-Object -ExpandProperty ProxyAddresses
         foreach ($proxy in $user) {
-            if ($proxy -like "sip:") {
-                $sip = $proxy
+            if ($proxy -like "sip:*") {
+                $sip = $proxy.substring(4)
             }
-            if ($proxy -like "SMTP:*") {
-                $smtp = $proxy
+            if ($proxy -clike "SMTP:*") {
+                $smtp = $proxy.substring(5)
             }
         }
         Write-Output "SIP: $sip"
         Write-Output "SMTP: $smtp"
-        if ($sip.substring(4) -match $smtp.substring(5)) {
+        if ($sip -match $smtp) {
             Write-Output "SIP & SMTP matches!"
         } else {
             Write-Error "SIP & SMTP does not match!"
