@@ -38,8 +38,7 @@ function Get-CsPoolService {
                 $serviceStartReport = "Stopped services started by user."
                 Out-File -FilePath $ReportPath -InputObject $serviceStartReport -Append
             }
-        }
-        if ($result.status -contains "stopped") {
+        } elseif ($result.status -contains "stopped") {
             Write-Warning "A service is not running. This might result in a bad user experience."
             Write-Output "Would you like to start the service?"
             do {
