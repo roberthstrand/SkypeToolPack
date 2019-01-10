@@ -9,3 +9,5 @@ Install-Module -Name SkypeToolPack
 ```
 
 For the majority of the cmdlets, you need to have the Skype for Business administration tools installed on the machine but some cmdlets require the *ActiveDirectory* module. 
+
+[Documentation](docs/index.md)
