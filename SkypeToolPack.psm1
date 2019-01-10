@@ -145,7 +145,10 @@ function Get-CsProxyAddress {
     Param (
         [Parameter(
             Position = 0, Mandatory, HelpMessage = "Users SAMAccountName.")]
-        [string]$SAMAccount
+        [string]$SAMAccount,
+        [Parameter(
+            HelpMessage = "Switch to check your entire Skype installation for discrepancy.")]
+            [string]$FullScan
         )
         $user = Get-AdUser $SAMAccount -properties ProxyAddresses | Select-Object -ExpandProperty ProxyAddresses
         foreach ($proxy in $user) {
@@ -156,12 +159,20 @@ function Get-CsProxyAddress {
                 $smtp = $proxy.substring(5)
             }
         }
-        Write-Output "SIP: $sip"
-        Write-Output "SMTP: $smtp"
-        if ($sip -match $smtp) {
-            Write-Output "SIP & SMTP matches!"
-        } else {
-            Write-Error "SIP & SMTP does not match!"
-        }
+        if ($FullScan) {
+            if ($sip -notlike $smtp)
+                Write-Warning "Found user without matching SIP & SMTP"
+                Write-Output (Get-AdUser $SAMAccount).UserPrincipalName
+                Write-Output "SIP: $sip"
+                Write-Output "SMTP: $smtp"
+            } else {
+                Write-Output "SIP: $sip"
+                Write-Output "SMTP: $smtp"
+                if ($sip -match $smtp) {
+                    Write-Output "SIP & SMTP matches!"
+                } else {
+                    Write-Error "SIP & SMTP does not match!"
+                }
+            }
 }
 Export-ModuleMember -Function Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService, Get-CsProxyAddress -Alias gpool, rpool, grgs, gprox -Cmdlet Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService
