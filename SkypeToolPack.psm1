@@ -152,15 +152,18 @@ function Get-CsProxyAddress {
             ParameterSetName = "Everyone", HelpMessage = "Switch to check your entire Skype installation for discrepancy.")]
         [switch]$FullScan
     )
+    $global:sip = $null
+    $global:smtp = $null
     function proxyExtract {
         foreach ($proxy in $user) {
             if ($proxy -like "sip:*") {
-                $sip = $proxy.substring(4)
+                set-variable -Name $global:sip -Value $proxy.substring(4) -Scope Global
             }
             if ($proxy -clike "SMTP:*") {
-                $smtp = $proxy.substring(5)
+                $global:smtp = $proxy.substring(5)
             }
         }
+    export
     }
     if ($FullScan) {
         $users = (Get-CsUser).identity.name | Get-Aduser -properties ProxyAddresses
@@ -168,19 +171,19 @@ function Get-CsProxyAddress {
             $SAMAccount = $user.SAMAccountName
             $user = $user | Select-Object -ExpandProperty ProxyAddresses
             proxyExtract
-            if ($sip -notlike $smtp) {
+            if ($global:sip -notlike $global:smtp) {
                 Write-Warning "Found user without matching SIP & SMTP"
                 Write-Output (Get-AdUser $SAMAccount).UserPrincipalName
-                Write-Output "SIP: $sip"
-                Write-Output "SMTP: $smtp"
+                Write-Output "SIP: $global:sip"
+                Write-Output "SMTP: $global:smtp"
             }
         }
     } else {
         $user = Get-AdUser $SAMAccount -properties ProxyAddresses | Select-Object -ExpandProperty ProxyAddresses
         proxyExtract
-        Write-Output "SIP: $sip"
-        Write-Output "SMTP: $smtp"
-        if ($sip -match $smtp) {
+        Write-Output "SIP: $global:sip"
+        Write-Output "SMTP: $global:smtp"
+        if ($global:sip -match $global:smtp) {
             Write-Output "SIP & SMTP matches!"
         }
         else {
