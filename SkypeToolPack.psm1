@@ -157,7 +157,7 @@ function Get-CsProxyAddress {
     function proxyExtract {
         foreach ($proxy in $user) {
             if ($proxy -like "sip:*") {
-                set-variable -Name $global:sip -Value $proxy.substring(4) -Scope Global
+                $global:sip = $proxy.substring(4)
             }
             if ($proxy -clike "SMTP:*") {
                 $global:smtp = $proxy.substring(5)
