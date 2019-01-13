@@ -163,7 +163,6 @@ function Get-CsProxyAddress {
                 $global:smtp = $proxy.substring(5)
             }
         }
-    export
     }
     if ($FullScan) {
         $users = (Get-CsUser).identity.name | Get-Aduser -properties ProxyAddresses
