@@ -165,24 +165,19 @@ function Get-CsProxyAddress {
         }
     }
     if ($FullScan) {
-        $users = (Get-CsUser).SAMAccount | Get-AdUser -properties ProxyAddresses
-        $Output = @{
-            "UserPrincipalName" = "";
-            "SIP" = "";
-            "SMTP" = "";
-        }
+        $users = (Get-CsUser).SAMAccountName | Get-AdUser -properties ProxyAddresses
         foreach ($user in $users) {
             $SAMAccount = $user.SAMAccountName
             $user = $user | Select-Object -ExpandProperty ProxyAddresses
             proxyExtract
             if ($global:sip -notlike $global:smtp) {
-                #Write-Warning "Found user without matching SIP & SMTP"
-                #Write-Output (Get-AdUser $SAMAccount).UserPrincipalName
-                #Write-Output "SIP: $global:sip"
-                #Write-Output "SMTP: $global:smtp"
-                $Output.Add("(Get-AdUser $SAMAccount).UserPrincipalName", "$global:sip", "$global:smtp")
+                $userObject = [PSCustomObject]@{
+                    UserPrincipalName = (Get-AdUser $SAMAccount).UserPrincipalName
+                    SIP = $global:sip
+                    SMTP = $global:smtp
+                }
+            Write-Output $userObject
             }
-        Write-Output $Output
         }
     } else {
         $user = Get-AdUser $SAMAccount -properties ProxyAddresses | Select-Object -ExpandProperty ProxyAddresses
