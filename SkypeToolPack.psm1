@@ -152,9 +152,9 @@ function Get-CsProxyAddress {
             ParameterSetName = "Everyone", HelpMessage = "Switch to check your entire Skype installation for discrepancy.")]
         [switch]$FullScan
     )
-    $global:sip = $null
-    $global:smtp = $null
     function proxyExtract {
+        $global:sip = $null
+        $global:smtp = $null
         foreach ($proxy in $user) {
             if ($proxy -like "sip:*") {
                 $global:sip = $proxy.substring(4)
@@ -165,17 +165,24 @@ function Get-CsProxyAddress {
         }
     }
     if ($FullScan) {
-        $users = (Get-CsUser).identity.name | Get-Aduser -properties ProxyAddresses
+        $users = (Get-CsUser).SAMAccount | Get-AdUser -properties ProxyAddresses
+        $Output = @{
+            "UserPrincipalName" = "";
+            "SIP" = "";
+            "SMTP" = "";
+        }
         foreach ($user in $users) {
             $SAMAccount = $user.SAMAccountName
             $user = $user | Select-Object -ExpandProperty ProxyAddresses
             proxyExtract
             if ($global:sip -notlike $global:smtp) {
-                Write-Warning "Found user without matching SIP & SMTP"
-                Write-Output (Get-AdUser $SAMAccount).UserPrincipalName
-                Write-Output "SIP: $global:sip"
-                Write-Output "SMTP: $global:smtp"
+                #Write-Warning "Found user without matching SIP & SMTP"
+                #Write-Output (Get-AdUser $SAMAccount).UserPrincipalName
+                #Write-Output "SIP: $global:sip"
+                #Write-Output "SMTP: $global:smtp"
+                $Output.Add("(Get-AdUser $SAMAccount).UserPrincipalName", "$global:sip", "$global:smtp")
             }
+        Write-Output $Output
         }
     } else {
         $user = Get-AdUser $SAMAccount -properties ProxyAddresses | Select-Object -ExpandProperty ProxyAddresses
@@ -191,4 +198,4 @@ function Get-CsProxyAddress {
     }
 }
 
-Export-ModuleMember -Function Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService, Get-CsProxyAddress -Alias gpool, rpool, grgs, gprox -Cmdlet Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService
+Export-ModuleMember -Cmdlet Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService, Get-CsProxyAddress
