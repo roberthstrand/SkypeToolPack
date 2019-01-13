@@ -146,38 +146,47 @@ function Get-CsProxyAddress {
     #>
     Param (
         [Parameter(
-            Position = 0, Mandatory, HelpMessage = "Users SAMAccountName.")]
+            Position = 0, ParameterSetName="SingleUser", Mandatory, HelpMessage = "Users SAMAccountName.")]
         [string]$SAMAccount,
         [Parameter(
-            HelpMessage = "Switch to check your entire Skype installation for discrepancy.")]
-        [string]$FullScan
+            ParameterSetName = "Everyone", HelpMessage = "Switch to check your entire Skype installation for discrepancy.")]
+        [switch]$FullScan
     )
-    $user = Get-AdUser $SAMAccount -properties ProxyAddresses | Select-Object -ExpandProperty ProxyAddresses
-    foreach ($proxy in $user) {
-        if ($proxy -like "sip:*") {
-            $sip = $proxy.substring(4)
-        }
-        if ($proxy -clike "SMTP:*") {
-            $smtp = $proxy.substring(5)
+    function proxyExtract {
+        foreach ($proxy in $user) {
+            if ($proxy -like "sip:*") {
+                $sip = $proxy.substring(4)
+            }
+            if ($proxy -clike "SMTP:*") {
+                $smtp = $proxy.substring(5)
+            }
         }
     }
     if ($FullScan) {
-        if ($sip -notlike $smtp) {
-            Write-Warning "Found user without matching SIP & SMTP"
-            Write-Output (Get-AdUser $SAMAccount).UserPrincipalName
-            Write-Output "SIP: $sip"
-            Write-Output "SMTP: $smtp"
+        $users = (Get-CsUser).identity.name | Get-Aduser -properties ProxyAddresses
+        foreach ($user in $users) {
+            $SAMAccount = $user.SAMAccountName
+            $user = $user | Select-Object -ExpandProperty ProxyAddresses
+            proxyExtract
+            if ($sip -notlike $smtp) {
+                Write-Warning "Found user without matching SIP & SMTP"
+                Write-Output (Get-AdUser $SAMAccount).UserPrincipalName
+                Write-Output "SIP: $sip"
+                Write-Output "SMTP: $smtp"
+            }
+        }
+    } else {
+        $user = Get-AdUser $SAMAccount -properties ProxyAddresses | Select-Object -ExpandProperty ProxyAddresses
+        proxyExtract
+        Write-Output "SIP: $sip"
+        Write-Output "SMTP: $smtp"
+        if ($sip -match $smtp) {
+            Write-Output "SIP & SMTP matches!"
         }
         else {
-            Write-Output "SIP: $sip"
-            Write-Output "SMTP: $smtp"
-            if ($sip -match $smtp) {
-                Write-Output "SIP & SMTP matches!"
-            }
-            else {
-                Write-Error "SIP & SMTP does not match!"
-            }
+            Write-Error "SIP & SMTP does not match!"
         }
     }
 }
+
 Export-ModuleMember -Function Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService, Get-CsProxyAddress -Alias gpool, rpool, grgs, gprox -Cmdlet Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService
