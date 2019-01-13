@@ -38,7 +38,8 @@ function Get-CsPoolService {
                 $serviceStartReport = "Stopped services started by user."
                 Out-File -FilePath $ReportPath -InputObject $serviceStartReport -Append
             }
-        } elseif ($result.status -contains "stopped") {
+        }
+        elseif ($result.status -contains "stopped") {
             Write-Warning "A service is not running. This might result in a bad user experience."
             Write-Output "Would you like to start the service?"
             do {
@@ -62,17 +63,18 @@ function Restart-CsPoolService {
         [string]$PoolFQDN,
         [Parameter(HelpMessage = "Define a service to restart.")]
         [string]$Service
-        )
-        $servers = (Get-CsPool -Identity $PoolFQDN).computers
-        foreach ($server in $servers) {
-            if (!$Service) {
-                Stop-CsWindowsService -ComputerName $server | Out-Null
-                Start-CsWindowsService -ComputerName $server | Out-Null
-            } else {
-                Stop-CsWindowsService $Service -ComputerName $server | Out-Null
-                Start-CsWindowsService $Service -ComputerName $server | Out-Null
-            }
+    )
+    $servers = (Get-CsPool -Identity $PoolFQDN).computers
+    foreach ($server in $servers) {
+        if (!$Service) {
+            Stop-CsWindowsService -ComputerName $server | Out-Null
+            Start-CsWindowsService -ComputerName $server | Out-Null
         }
+        else {
+            Stop-CsWindowsService $Service -ComputerName $server | Out-Null
+            Start-CsWindowsService $Service -ComputerName $server | Out-Null
+        }
+    }
 }
 function Get-CsResponseGroupService {
     <#
@@ -148,31 +150,34 @@ function Get-CsProxyAddress {
         [string]$SAMAccount,
         [Parameter(
             HelpMessage = "Switch to check your entire Skype installation for discrepancy.")]
-            [string]$FullScan
-        )
-        $user = Get-AdUser $SAMAccount -properties ProxyAddresses | Select-Object -ExpandProperty ProxyAddresses
-        foreach ($proxy in $user) {
-            if ($proxy -like "sip:*") {
-                $sip = $proxy.substring(4)
+        [string]$FullScan
+    )
+    $user = Get-AdUser $SAMAccount -properties ProxyAddresses | Select-Object -ExpandProperty ProxyAddresses
+    foreach ($proxy in $user) {
+        if ($proxy -like "sip:*") {
+            $sip = $proxy.substring(4)
+        }
+        if ($proxy -clike "SMTP:*") {
+            $smtp = $proxy.substring(5)
+        }
+    }
+    if ($FullScan) {
+        if ($sip -notlike $smtp) {
+            Write-Warning "Found user without matching SIP & SMTP"
+            Write-Output (Get-AdUser $SAMAccount).UserPrincipalName
+            Write-Output "SIP: $sip"
+            Write-Output "SMTP: $smtp"
+        }
+        else {
+            Write-Output "SIP: $sip"
+            Write-Output "SMTP: $smtp"
+            if ($sip -match $smtp) {
+                Write-Output "SIP & SMTP matches!"
             }
-            if ($proxy -clike "SMTP:*") {
-                $smtp = $proxy.substring(5)
+            else {
+                Write-Error "SIP & SMTP does not match!"
             }
         }
-        if ($FullScan) {
-            if ($sip -notlike $smtp)
-                Write-Warning "Found user without matching SIP & SMTP"
-                Write-Output (Get-AdUser $SAMAccount).UserPrincipalName
-                Write-Output "SIP: $sip"
-                Write-Output "SMTP: $smtp"
-            } else {
-                Write-Output "SIP: $sip"
-                Write-Output "SMTP: $smtp"
-                if ($sip -match $smtp) {
-                    Write-Output "SIP & SMTP matches!"
-                } else {
-                    Write-Error "SIP & SMTP does not match!"
-                }
-            }
+    }
 }
 Export-ModuleMember -Function Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService, Get-CsProxyAddress -Alias gpool, rpool, grgs, gprox -Cmdlet Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService
