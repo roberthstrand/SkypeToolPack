@@ -192,4 +192,4 @@ function Get-CsProxyAddress {
         }
     }
 }
-Export-ModuleMember -Cmdlet Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService, Get-CsProxyAddress
+Export-ModuleMember -Cmdlet Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService, Get-CsProxyAddress -Function Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService,Get-CsProxyAddress
