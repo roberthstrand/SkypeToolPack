@@ -146,7 +146,7 @@ function Get-CsProxyAddress {
     #>
     Param (
         [Parameter(
-            Position = 0, ParameterSetName="SingleUser", Mandatory, HelpMessage = "Users SAMAccountName.")]
+            Position = 0, ParameterSetName = "SingleUser", Mandatory, HelpMessage = "Users SAMAccountName.")]
         [string]$SAMAccount,
         [Parameter(
             ParameterSetName = "Everyone", HelpMessage = "Switch to check your entire Skype installation for discrepancy.")]
@@ -173,10 +173,10 @@ function Get-CsProxyAddress {
             if ($global:sip -notlike $global:smtp) {
                 $userObject = [PSCustomObject]@{
                     UserPrincipalName = (Get-AdUser $SAMAccount).UserPrincipalName
-                    SIP = $global:sip
-                    SMTP = $global:smtp
+                    SIP               = $global:sip
+                    SMTP              = $global:smtp
                 }
-            Write-Output $userObject
+                Write-Output $userObject
             }
         }
     } else {
@@ -186,10 +186,9 @@ function Get-CsProxyAddress {
         Write-Output "SMTP: $global:smtp"
         if ($global:sip -match $global:smtp) {
             Write-Output "SIP & SMTP matches!"
-        }
-        else {
+        } else {
             Write-Error "SIP & SMTP does not match!"
         }
     }
 }
-Export-ModuleMember -Cmdlet Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService, Get-CsProxyAddress -Function Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService,Get-CsProxyAddress
+Export-ModuleMember -Cmdlet Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService, Get-CsProxyAddress -Function Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService, Get-CsProxyAddress
