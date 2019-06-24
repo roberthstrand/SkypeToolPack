@@ -45,7 +45,8 @@ function Get-CsProxyAddress {
         $result = [PSCustomObject]@{
             SIP = $proxy.sip
             SMTP = $proxy.SMTP
-            PrimaryUserAddress = "$user.msRTCSIP-PrimaryUserAddress"
+            PrimaryUserAddress = ($user."msRTCSIP-PrimaryUserAddress").substring(4)
         }
+        return $result | Format-List
     }
 }
