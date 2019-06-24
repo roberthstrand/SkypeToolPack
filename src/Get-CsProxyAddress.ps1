@@ -39,6 +39,9 @@ function Get-CsProxyAddress {
     } else {
         $user = Get-AdUser $SAMAccount -properties ProxyAddresses,msRTCSIP-PrimaryUserAddress
         $proxy = proxyExtract
-        Write-Output $proxy
+        if ($proxy.sip -ne $proxy.smtp) {
+            Write-Warning "User SIP and SMTP proxy address doesn't match."
+            Write-Output $proxy
+        }
     }
 }
