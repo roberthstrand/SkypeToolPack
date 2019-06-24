@@ -41,6 +41,8 @@ function Get-CsProxyAddress {
         $proxy = proxyExtract
         if ($proxy.sip -ne $proxy.smtp) {
             Write-Warning "User SIP and SMTP proxy address doesn't match."
+        } elseif ($proxy.sip -ne ($user."msRTCSIP-PrimaryUserAddress").substring(4)) {
+            Write-Warning "Proxy address and msRTCSIP-PrimaryUserAddress mismatch."
         }
         $result = [PSCustomObject]@{
             SIP = $proxy.sip
