@@ -18,9 +18,13 @@ function Get-CsProxyAddress {
         [switch]$FullScan
     )
     function proxyExtract {
+        param (
+            [Parameter(Position = 0)]
+            [string]$proxyUser
+        )
         $sip = $null
         $smtp = $null
-        foreach ($proxy in ($user).ProxyAddresses) {
+        foreach ($proxy in ($proxyuser).ProxyAddresses) {
             if ($proxy -like "sip:*") {
                 $sip = $proxy.substring(4)
             }
@@ -35,12 +39,12 @@ function Get-CsProxyAddress {
         return $result
     }
     if ($FullScan) {
-        $user = (Get-CsUser).SAMAccountName | Get-AdUser $SAMAccount -properties ProxyAddresses,msRTCSIP-PrimaryUserAddress
+        $user = (Get-CsUser).SAMAccountName | Get-AdUser -properties ProxyAddresses,msRTCSIP-PrimaryUserAddress
     } else {
         $user = Get-AdUser $SAMAccount -properties ProxyAddresses,msRTCSIP-PrimaryUserAddress
     }
     foreach ($adUser in $user) {
-        $proxy = proxyExtract
+        $proxy = proxyExtract -proxyUser $adUser
         if ($proxy.sip -ne $proxy.smtp) {
             Write-Warning "User SIP and SMTP proxyAddress doesn't match."
         } elseif ($proxy.sip -ne ($adUser."msRTCSIP-PrimaryUserAddress").substring(4)) {
