@@ -35,19 +35,21 @@ function Get-CsProxyAddress {
         return $result
     }
     if ($FullScan) {
-
+        $user = (Get-CsUser).SAMAccountName | Get-AdUser $SAMAccount -properties ProxyAddresses,msRTCSIP-PrimaryUserAddress
     } else {
         $user = Get-AdUser $SAMAccount -properties ProxyAddresses,msRTCSIP-PrimaryUserAddress
+    }
+    foreach ($adUser in $user) {
         $proxy = proxyExtract
         if ($proxy.sip -ne $proxy.smtp) {
-            Write-Warning "User SIP and SMTP proxy address doesn't match."
-        } elseif ($proxy.sip -ne ($user."msRTCSIP-PrimaryUserAddress").substring(4)) {
-            Write-Warning "Proxy address and msRTCSIP-PrimaryUserAddress mismatch."
+            Write-Warning "User SIP and SMTP proxyAddress doesn't match."
+        } elseif ($proxy.sip -ne ($adUser."msRTCSIP-PrimaryUserAddress").substring(4)) {
+            Write-Warning "ProxyAddress and msRTCSIP-PrimaryUserAddress mismatch."
         }
         $result = [PSCustomObject]@{
             SIP = $proxy.sip
             SMTP = $proxy.SMTP
-            PrimaryUserAddress = ($user."msRTCSIP-PrimaryUserAddress").substring(4)
+            PrimaryUserAddress = ($adUser."msRTCSIP-PrimaryUserAddress").substring(4)
         }
         return $result | Format-List
     }
