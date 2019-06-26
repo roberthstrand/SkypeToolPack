@@ -37,25 +37,34 @@ function Get-CsProxyAddress {
         }
         return $result
     }
+    function returnResult {
+        $result = [PSCustomObject]@{
+            SIP = $proxy.sip
+            PrimaryUserAddress = ($_."msRTCSIP-PrimaryUserAddress").substring(4)
+            SMTP = $proxy.SMTP
+        }
+        return $result | Format-List
+    }
     if ($FullScan) {
+        # Create userlist with all Skype-enabled users in AD
         $userlist = Get-AdUser -Filter 'msRTCSIP-UserEnabled -eq $true' -properties ProxyAddresses,msRTCSIP-PrimaryUserAddress
     } else {
+        # Create userlist based on the SAMAccount specified
         $userlist = Get-AdUser $SAMAccount -properties ProxyAddresses,msRTCSIP-PrimaryUserAddress
     }
     $userlist | ForEach-Object {
         $proxy = proxyExtract
         if ($proxy.sip -ne $proxy.smtp) {
+            # Write warning about proxy mismatch and return result
             Write-Warning "User SIP and SMTP proxyAddress doesn't match."
+            returnResult
         } elseif ($proxy.sip -ne ($_."msRTCSIP-PrimaryUserAddress").substring(4)) {
+            # Write warning about SfB Primary User Address not matching SIP-Proxyaddress and return result
             Write-Warning "ProxyAddress and msRTCSIP-PrimaryUserAddress mismatch."
+            returnResult
         }
-        if ($AllResults) {
-            $result = [PSCustomObject]@{
-                SIP = $proxy.sip
-                SMTP = $proxy.SMTP
-                PrimaryUserAddress = ($_."msRTCSIP-PrimaryUserAddress").substring(4)
-            }
-            return $result | Format-List
+        if ($AllResults -or $SAMAccount) {
+            returnResult
         }
     }
 }
