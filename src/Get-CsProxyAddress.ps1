@@ -15,16 +15,15 @@ function Get-CsProxyAddress {
         [string]$SAMAccount,
         [Parameter(
             ParameterSetName = "Everyone", HelpMessage = "Switch to check your entire Skype installation for discrepancy.")]
-        [switch]$FullScan
+        [switch]$FullScan,
+        [Parameter(
+            ParameterSetName = "Everyone", HelpMessage = "Show all users tested, errors or not")]
+        [switch]$AllResults
     )
     function proxyExtract {
-        param (
-            [Parameter(Position = 0)]
-            [string]$proxyUser
-        )
         $sip = $null
         $smtp = $null
-        foreach ($proxy in ($proxyuser).ProxyAddresses) {
+        foreach ($proxy in ($_).ProxyAddresses) {
             if ($proxy -like "sip:*") {
                 $sip = $proxy.substring(4)
             }
@@ -39,22 +38,24 @@ function Get-CsProxyAddress {
         return $result
     }
     if ($FullScan) {
-        $user = (Get-CsUser).SAMAccountName | Get-AdUser -properties ProxyAddresses,msRTCSIP-PrimaryUserAddress
+        $userlist = Get-AdUser -Filter 'msRTCSIP-UserEnabled -eq $true' -properties ProxyAddresses,msRTCSIP-PrimaryUserAddress
     } else {
-        $user = Get-AdUser $SAMAccount -properties ProxyAddresses,msRTCSIP-PrimaryUserAddress
+        $userlist = Get-AdUser $SAMAccount -properties ProxyAddresses,msRTCSIP-PrimaryUserAddress
     }
-    foreach ($adUser in $user) {
-        $proxy = proxyExtract -proxyUser $adUser
+    $userlist | ForEach-Object {
+        $proxy = proxyExtract
         if ($proxy.sip -ne $proxy.smtp) {
             Write-Warning "User SIP and SMTP proxyAddress doesn't match."
-        } elseif ($proxy.sip -ne ($adUser."msRTCSIP-PrimaryUserAddress").substring(4)) {
+        } elseif ($proxy.sip -ne ($_."msRTCSIP-PrimaryUserAddress").substring(4)) {
             Write-Warning "ProxyAddress and msRTCSIP-PrimaryUserAddress mismatch."
         }
-        $result = [PSCustomObject]@{
-            SIP = $proxy.sip
-            SMTP = $proxy.SMTP
-            PrimaryUserAddress = ($adUser."msRTCSIP-PrimaryUserAddress").substring(4)
+        if ($AllResults) {
+            $result = [PSCustomObject]@{
+                SIP = $proxy.sip
+                SMTP = $proxy.SMTP
+                PrimaryUserAddress = ($_."msRTCSIP-PrimaryUserAddress").substring(4)
+            }
+            return $result | Format-List
         }
-        return $result | Format-List
     }
 }
