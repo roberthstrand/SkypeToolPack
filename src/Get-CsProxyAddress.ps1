@@ -15,7 +15,7 @@ function Get-CsProxyAddress {
         [string]$SAMAccount,
         [Parameter(
             Position = 1, ParameterSetName = "SingleUser", HelpMessage = "Any organizational unit that should not be searched")]
-        [array]$OU = $false,
+        [array]$ExcludeOU = $false,
         [Parameter(
             ParameterSetName = "Everyone", HelpMessage = "Switch to check your entire Skype installation for discrepancy.")]
         [switch]$FullScan,
@@ -50,10 +50,10 @@ function Get-CsProxyAddress {
     }
     if ($FullScan) {
         # Create userlist with all Skype-enabled users in AD
-        $userlist = Get-AdUser -Filter 'msRTCSIP-UserEnabled -eq $true' -properties ProxyAddresses,msRTCSIP-PrimaryUserAddress | Where-Object {$_.DistinguishedName -notmatch $OU}
+        $userlist = Get-AdUser -Filter 'msRTCSIP-UserEnabled -eq $true' -properties ProxyAddresses,msRTCSIP-PrimaryUserAddress | Where-Object {$_.DistinguishedName -notmatch $ExcludeOU}
     } else {
         # Create userlist based on the SAMAccount specified
-        $userlist = Get-AdUser $SAMAccount -properties ProxyAddresses,msRTCSIP-PrimaryUserAddress
+        $userlist = Get-AdUser $SAMAccount -properties ProxyAddresses,msRTCSIP-PrimaryUserAddress | Where-Object {$_.DistinguishedName -notmatch $ExcludeOU}
     }
     $userlist | ForEach-Object {
         $proxy = proxyExtract
