@@ -14,7 +14,7 @@ function Get-CsProxyAddress {
             Position = 0, ParameterSetName = "SingleUser", Mandatory, HelpMessage = "Users SAMAccountName.")]
         [string]$SAMAccount,
         [Parameter(
-            Position = 1, ParameterSetName = "SingleUser", HelpMessage = "Any organizational unit that should not be searched")]
+            HelpMessage = "Any organizational unit that should not be searched")]
         [array]$ExcludeOU = $false,
         [Parameter(
             ParameterSetName = "Everyone", HelpMessage = "Switch to check your entire Skype installation for discrepancy.")]
@@ -42,6 +42,7 @@ function Get-CsProxyAddress {
     }
     function returnResult {
         $result = [PSCustomObject]@{
+            User = $_."DistinguishedName"
             SIP = $proxy.sip
             PrimaryUserAddress = ($_."msRTCSIP-PrimaryUserAddress").substring(4)
             SMTP = $proxy.SMTP
