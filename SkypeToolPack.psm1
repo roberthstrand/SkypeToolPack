@@ -1,3 +1,4 @@
+. $PSScriptRoot\src\Get-CsProxyAddress.ps1
 function Get-CsPoolService {
     <#
     .SYNOPSIS
@@ -133,62 +134,25 @@ function Get-CsResponseGroupService {
         }
     }
 }
-function Get-CsProxyAddress {
-    <#
-    .SYNOPSIS
-    Checks a user for matching SIP and primary SMTP address.
-    .DESCRIPTION
-    Checks a user for matching SIP and primary SMTP address.
-    .PARAMETER SAMAccount
-    Required, defines the user to check. This gather all the proxyaddresses that has been defined in Active Directory, then find the SIP and primary SMTP to match later.
-    .EXAMPLE
-    Get-CsProxyAddress SAMAccountName
-    #>
-    Param (
-        [Parameter(
-            Position = 0, ParameterSetName = "SingleUser", Mandatory, HelpMessage = "Users SAMAccountName.")]
-        [string]$SAMAccount,
-        [Parameter(
-            ParameterSetName = "Everyone", HelpMessage = "Switch to check your entire Skype installation for discrepancy.")]
-        [switch]$FullScan
+function Test-CsDnsRecords {
+    param (
+        [Parameter(Position = 0,
+            Mandatory, HelpMessage = "SIP domain you want to check")]
+        [string]$SipDomain
     )
-    function proxyExtract {
-        $global:sip = $null
-        $global:smtp = $null
-        foreach ($proxy in $user) {
-            if ($proxy -like "sip:*") {
-                $global:sip = $proxy.substring(4)
-            }
-            if ($proxy -clike "SMTP:*") {
-                $global:smtp = $proxy.substring(5)
-            }
-        }
-    }
-    if ($FullScan) {
-        $users = (Get-CsUser).SAMAccountName | Get-AdUser -properties ProxyAddresses
-        foreach ($user in $users) {
-            $SAMAccount = $user.SAMAccountName
-            $user = $user | Select-Object -ExpandProperty ProxyAddresses
-            proxyExtract
-            if ($global:sip -notlike $global:smtp) {
-                $userObject = [PSCustomObject]@{
-                    UserPrincipalName = (Get-AdUser $SAMAccount).UserPrincipalName
-                    SIP               = $global:sip
-                    SMTP              = $global:smtp
-                }
-                Write-Output $userObject
-            }
-        }
+    #Test whether internal or external
+    if ((Resolve-DnsName lyncdiscoverinternal.$SipDomain -ErrorAction SilentlyContinue) -and (Resolve-DnsName $SipDomain)) {
+        $environment = "internal"
+    } elseif (!(Resolve-DnsName $SipDomain -ErrorAction SilentlyContinue)) {
+        Write-Error "DNS name does not exist"
     } else {
-        $user = Get-AdUser $SAMAccount -properties ProxyAddresses | Select-Object -ExpandProperty ProxyAddresses
-        proxyExtract
-        Write-Output "SIP: $global:sip"
-        Write-Output "SMTP: $global:smtp"
-        if ($global:sip -match $global:smtp) {
-            Write-Output "SIP & SMTP matches!"
-        } else {
-            Write-Error "SIP & SMTP does not match!"
-        }
+        $environment = "external"
     }
+    #Sjekk offentlig DNS om det er external, eller begge delene om det er internal.
+    <#
+    Internal:
+    Lyncdiscoverinternal.$SipDomain, hent ut access edge
+    access.$SipDomain basert på LDI
+    #>
 }
 Export-ModuleMember -Cmdlet Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService, Get-CsProxyAddress -Function Get-CsPoolService, Restart-CsPoolService, Get-CsResponseGroupService, Get-CsProxyAddress
